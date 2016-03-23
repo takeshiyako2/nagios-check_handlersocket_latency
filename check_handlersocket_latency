@@ -1,0 +1,83 @@
+#!/usr/bin/perl 
+use strict;
+use warnings FATAL => 'all';
+use Net::HandlerSocket;
+use Time::HiRes qw(gettimeofday tv_interval ualarm);
+use Pod::Usage;
+use Getopt::Long;
+use Data::Dumper;
+=head1 DESCRIPTION
+
+check_handlersocket_latency is Nagios plugin for latency checker of MySQL HandlerSocket.
+
+=head1 SYNOPSIS
+
+    % check_handlersocket_latency -w [waring seconds] -s [critical seconds] -host [hostname]
+    % check_handlersocket_latency -w 0.70 -s 1.00 -host localhost
+
+=cut
+
+# Get option
+GetOptions(
+    \my %opt, qw/
+    w=f
+    s=f
+    database=s
+    host=s
+    table=s
+    index=s
+    columns=s
+    port=s
+    value=s
+    all
+/) or pod2usage(1);
+
+my @required_options = qw/w s/;
+pod2usage(2) if grep {!exists $opt{$_}} @required_options;
+
+# Use option or default value
+$opt{database} = exists $opt{database}  ? $opt{database} : 'mysql';
+$opt{host} = exists $opt{host}  ? $opt{host} : 'localhost';
+$opt{table} = exists $opt{table}  ? $opt{table} : 'user';
+$opt{index} = exists $opt{index}  ? $opt{index} : 'PRIMARY';
+$opt{columns} = exists $opt{columns}  ? $opt{columns} : 'Host';
+$opt{port} = exists $opt{port}  ? $opt{port} : '9998';
+$opt{value} = exists $opt{value}  ? $opt{value} : 'localhost';
+
+# Start calc latency (microseconds)
+my ($start_sec, $start_microseconds) = gettimeofday();
+
+# Make HandlerSocket connection
+my $args = { host => $opt{'host'}, port => $opt{'port'} };
+my $hs = new Net::HandlerSocket($args);
+my $res = $hs->open_index(0, $opt{'database'}, $opt{'table'},$opt{'index'}, $opt{'columns'});
+if ($hs->get_error() ne 'open_table' && $hs->get_error) {
+    print 'connection error -> ' . $hs->get_error();
+    exit 3;
+}
+
+# Execute HandlerSocket and end calc latency
+my $latency_seconds;
+my $execute_res = $hs->execute_single(0, '=', [ "$opt{value}" ], 1, 0);
+if (@$execute_res == 2 && $execute_res->[1] eq $opt{value}) {
+    my ($end_sec, $end_microseconds) = gettimeofday();
+    $latency_seconds = (($end_sec - $start_sec) * 1000000 + $end_microseconds - $start_microseconds) / 1000 / 1000;
+} else {
+    print 'execute error';
+    exit 3;
+}
+
+# print
+if ($opt{s} <= $latency_seconds) {
+    print "CRITICAL: HandlerSocket read latency is high. response in $latency_seconds s|latency_seconds=$latency_seconds";
+    exit 2;
+} 
+elsif ($opt{w} <= $latency_seconds) {
+    print "WARNING: HandlerSocket read latency is high. response in $latency_seconds s|latency_seconds=$latency_seconds";
+    exit 1;
+}
+else {
+    print "OK: HandlerSocket read response in $latency_seconds s|latency_seconds=$latency_seconds";
+    exit 0;
+}
+
