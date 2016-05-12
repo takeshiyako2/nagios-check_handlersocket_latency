@@ -24,6 +24,24 @@ columns: Host
 value: localhost
 ```
 
+
+For exsample, if you have a table like this.
+
+```
+mysql> use sampledb;
+mysql> create table personal(id int PRIMARY KEY, name varchar(20));
+mysql> INSERT INTO personal (id,name) VALUES (100, "test");
+```
+
+You can check your table by this option.
+
+```
+$ ./check_handlersocket_latency -w 0.005 -c 0.020 -host localhost -database sampledb -table personal -columns id -value 100
+OK: HandlerSocket read response in 0.001996 s|latency_seconds=0.001996
+```
+
+
+
 # Link
 
 
