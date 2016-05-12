@@ -12,8 +12,8 @@ check_handlersocket_latency is Nagios plugin for latency checker of MySQL Handle
 
 =head1 SYNOPSIS
 
-    % check_handlersocket_latency -w [waring seconds] -s [critical seconds] -host [hostname]
-    % check_handlersocket_latency -w 0.70 -s 1.00 -host localhost
+    % check_handlersocket_latency -w [waring seconds] -c [critical seconds] -host [hostname]
+    % check_handlersocket_latency -w 0.70 -c 1.00 -host localhost
 
 =cut
 
@@ -21,7 +21,7 @@ check_handlersocket_latency is Nagios plugin for latency checker of MySQL Handle
 GetOptions(
     \my %opt, qw/
     w=f
-    s=f
+    c=f
     database=s
     host=s
     table=s
@@ -32,7 +32,7 @@ GetOptions(
     all
 /) or pod2usage(1);
 
-my @required_options = qw/w s/;
+my @required_options = qw/w c/;
 pod2usage(2) if grep {!exists $opt{$_}} @required_options;
 
 # Use option or default value
@@ -68,7 +68,7 @@ if (@$execute_res == 2 && $execute_res->[1] eq $opt{value}) {
 }
 
 # print
-if ($opt{s} <= $latency_seconds) {
+if ($opt{c} <= $latency_seconds) {
     print "CRITICAL: HandlerSocket read latency is high. response in $latency_seconds s|latency_seconds=$latency_seconds";
     exit 2;
 } 
