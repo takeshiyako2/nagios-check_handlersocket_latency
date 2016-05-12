@@ -1,7 +1,7 @@
 # nagios-check_handlersocket_latency
 
 
-This is a Nagios plugin for HandlerSocket(https://github.com/DeNA/HandlerSocket-Plugin-for-MySQL). 
+This is a Nagios plugin for HandlerSocket(https://github.com/DeNA/HandlerSocket-Plugin-for-MySQL).   
 This plugin checks read latency. 
 
 # Usage 
